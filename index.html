@@ -1,0 +1,295 @@
+<!doctype html>
+
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Komposisi Fungsi Solver — All-in-One</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.min.js"></script>
+  <style>
+    :root{--bg:#0f172a;--card:#02112e;--muted:#566cdb;--accent:#0e4397;--glass:rgba(255,255,255,0.03)}
+    *{box-sizing:border-box;font-family:Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial}
+    body{margin:0;background:linear-gradient(180deg,#071025 0%, #04043c 100%);color:#ebe6e6;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:28px}
+    .container{width:100%;max-width:980px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:12px;padding:22px;box-shadow:0 8px 30px rgba(2,6,23,0.7)}
+    header{display:flex;align-items:center;gap:12px}
+    h1{margin:0;font-size:20px}
+    p.lead{margin:6px 0 18px;color:var(--muted)}
+    .grid{display:grid;grid-template-columns:1fr 380px;gap:18px}
+    .card{background:var(--card);padding:16px;border-radius:10px}
+    label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+    input[type=text], input[type=number], select, textarea{width:100%;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:var(--glass);color:inherit;outline:none}
+    textarea{min-height:100px}
+    .row{display:flex;gap:10px}
+    button{background:var(--accent);border:none;padding:10px 12px;border-radius:8px;color:#c2beca;cursor:pointer;font-weight:600}
+    button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
+    .result{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);min-height:120px}
+    .small{font-size:12px;color:var(--muted)}
+    .examples{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+    .chip{background:rgba(255,255,255,0.03);padding:6px 8px;border-radius:999px;font-size:13px;border:1px solid rgba(255,255,255,0.02);cursor:pointer}
+    footer{margin-top:14px;color:var(--muted);font-size:13px}
+    @media (max-width:900px){.grid{grid-template-columns:1fr;}.card{padding:12px}}
+    .step{background:rgba(255,255,255,0.02);border-radius:8px;padding:10px;margin-bottom:8px}
+    .error{color:#ebb7b7;background:rgba(254,202,202,0.06);padding:8px;border-radius:6px}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div style="width:46px;height:46px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#7dd3fc);display:flex;align-items:center;justify-content:center;color:#022c43;font-weight:700">ƒ∘ƒ</div>
+      <div>
+        <h1>Komposisi Fungsi Solver — All-in-One</h1>
+        <p class="lead">Pilih fitur, isi nilai x serta f(x) dan g(x). Website akan menampilkan langkah perhitungan f(x), g(f(x)), dan bentuk komposisi simbolik g(f(x)). Cocok untuk tugas kuliah. </p>
+      </div>
+    </header><div class="grid" style="margin-top:14px">
+  <div>
+    <div id="feature-card" class="card">
+      <label for="feature">Pilih fitur (opsional untuk preset)</label>
+      <select id="feature">
+        <option value="custom">— Pilih (preset opsional) —</option>
+        <option value="rute">1. Rute Tercepat Kampus</option>
+        <option value="biaya">2. Biaya Kuliah & Beasiswa</option>
+        <option value="nutrisi">3. Kalkulator Nutrisi</option>
+        <option value="nilai">4. Kalkulator Nilai Akhir</option>
+        <option value="konversi">5. Konversi Mata Uang</option>
+        <option value="diskon">6. Diskon + Pajak UMKM</option>
+      </select>
+
+      <div id="feature-legend" class="legend" aria-hidden="true"></div>
+      <div id="calc-method" class="small" style="margin-top:8px">Metode perhitungan: <strong>standar</strong></div>
+
+      <div style="height:10px"></div>
+
+      <label for="x">Nilai x (angka input)</label>
+      <input id="x" type="number" placeholder="contoh: 2" />
+
+      <div style="height:10px"></div>
+
+      <label for="f">Fungsi f(x)</label>
+      <input id="f" type="text" placeholder="contoh: 2*x + 5 atau x^2" />
+      <div class="small" style="margin-top:6px">Gunakan <code>^</code> untuk pangkat. Contoh variabel hanya <code>x</code>.</div>
+
+      <div style="height:10px"></div>
+
+      <label for="g">Fungsi g(x)</label>
+      <input id="g" type="text" placeholder="contoh: x/3 + 4" />
+
+      <div style="height:12px"></div>
+
+      <div class="row">
+        <button id="calc">Hitung Komposisi</button>
+        <button id="swap" class="ghost">Tukar f & g</button>
+        <button id="clear" class="ghost">Bersihkan</button>
+      </div>
+
+      <div class="small" style="margin-top:10px">Contoh cepat:</div>
+      <div class="examples" id="examples"></div>
+
+    </div>
+
+    <div style="height:12px"></div>
+
+    <div class="card">
+      <label>Pengaturan lanjutan</label>
+      <div class="small">Validasi ekspresi memakai <strong>math.js</strong>. Ekspresi aman: aritmatika, fungsi matematika umum (sin, cos, sqrt, log), dan konstanta. Hindari penggunaan variabel selain <code>x</code>.</div>
+    </div>
+
+  </div>
+
+  <div>
+    <div class="card">
+      <label>Hasil & Langkah</label>
+      <div id="hasil" class="result">
+        <div class="small">Belum ada perhitungan. Isi input lalu tekan <strong>Hitung Komposisi</strong>.</div>
+      </div>
+
+      <div style="height:12px"></div>
+
+      <div class="small">Fitur tambahan:</div>
+      <div class="row" style="margin-top:8px">
+        <button id="copy" class="ghost">Salin hasil</button>
+        <button id="download" class="ghost">Unduh HTML</button>
+      </div>
+    </div>
+
+    <div style="height:12px"></div>
+
+    <div class="card">
+      <label>Penjelasan singkat</label>
+      <div class="small">Website ini menghitung f(x) dahulu lalu memasukkan hasilnya sebagai input ke g untuk mendapatkan g(f(x)). Selain nilai numerik, juga ditampilkan bentuk simbolik komposisi g(f(x)).</div>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+    <div class="small">Dibuat untuk tugas kuliah — Komposisi Fungsi. Kamu bisa mengedit fungsi dan nilai x sesukamu.</div>
+    <div class="small">Butuh laporan/proposal atau versi server? Katakan saja.</div>
+  </div>
+</footer>
+
+  </div>  <script>
+    // Preset examples for each feature
+    const presets = {
+      custom: {x: '', f: '', g: '', examples: ['2*x + 5','x^2','x/3 + 4']},
+      rute: {x: 2, waktu: '3*x', g: 'x + 5', examples: ['f(x)=3*x (menit per km) ; g(x)=x+5 (menit tambahan)']},
+      biaya: {x: 18, f: 'x*150000', g: 'x - (0.2*x)', examples: ['f(x)=SKS*x (biaya SKS) ; g(x)=apply beasiswa 20%']},
+      nutrisi: {x: 70, f: 'x*24', g: 'x*1.1', examples: ['f(x)=BB*24 (kcal) ; g=add 10% aktivitas']},
+      nilai: {x: 80, f: '0.3*x + 70', g: 'x', examples: ['f(x)=nilai tugas => persen ; g(x)=konversi ke skala akhir']},
+      konversi: {x: 100, f: 'x*0.000066', g: 'x + 5', examples: ['f(x)=IDR->USD ; g=fee']},
+      diskon: {x: 200000, f: 'x*0.8', g: 'x*1.11', examples: ['f(x)=harga setelah diskon 20% ; g=+PPN 11%']}
+    };
+
+    const featureEl = document.getElementById('feature');
+    const xEl = document.getElementById('x');
+    const fEl = document.getElementById('f');
+    const gEl = document.getElementById('g');
+    const examplesEl = document.getElementById('examples');
+    const hasilEl = document.getElementById('hasil');
+
+    // --- Per-feature calculator dispatch ---
+    const calcMethodEl = document.getElementById('calc-method');
+
+    function defaultCalculator(xVal, fExpr, gExpr, featureKey){
+      // Evaluate f(x)
+      const fxValRaw = math.evaluate(fExpr, {x: xVal});
+      let fxVal;
+      try { fxVal = (typeof math.number === 'function') ? math.number(fxValRaw) : Number(fxValRaw); } catch(e) { fxVal = Number(fxValRaw); }
+
+      // Evaluate g(f(x))
+      const gfxValRaw = math.evaluate(gExpr, {x: fxVal});
+      let gfxVal;
+      try { gfxVal = (typeof math.number === 'function') ? math.number(gfxValRaw) : Number(gfxValRaw); } catch(e) { gfxVal = Number(gfxValRaw); }
+
+      // Create symbolic composition g(f(x)) safely by replacing lone x tokens
+      const symbolic = gExpr.replace(/\bx\b/g, '(' + fExpr + ')');
+
+      const parts = [];
+      parts.push('<div class="step"><strong>Input:</strong> x = ' + xVal + '</div>');
+      parts.push('<div class="step"><strong>Langkah 1 — Hitung f(x):</strong><br>f(x) = ' + escapeHtml(fExpr) + '<br>f(' + xVal + ') = ' + formatNumber(fxVal) + '</div>');
+      parts.push('<div class="step"><strong>Langkah 2 — Hitung g(f(x)):</strong><br>g(x) = ' + escapeHtml(gExpr) + '<br>g(f(' + xVal + ')) = ' + formatNumber(gfxVal) + '</div>');
+      parts.push('<div class="step"><strong>Bentuk simbolik komposisi:</strong><br>g(f(x)) = ' + escapeHtml(symbolic) + '</div>');
+
+      return { html: parts.join(''), fxVal, gfxVal, symbolic };
+    }
+
+    // calculators map: change or extend these functions to customize per-feature behavior
+    const calculators = {
+      custom: defaultCalculator,
+      rute: defaultCalculator,
+      biaya: defaultCalculator,
+      nutrisi: defaultCalculator,
+      nilai: defaultCalculator,
+      konversi: defaultCalculator,
+      diskon: defaultCalculator
+    };
+
+    let currentCalculator = defaultCalculator;
+    function setCurrentCalculator(key){
+      currentCalculator = calculators[key] || defaultCalculator;
+      if(calcMethodEl) calcMethodEl.innerHTML = 'Metode perhitungan: <strong>' + (key || 'standar') + '</strong>';
+    }
+
+    function setPreset(key){
+      const p = presets[key] || presets.custom;
+      xEl.value = p.x ?? '';
+      fEl.value = p.f ?? '';
+      gEl.value = p.g ?? '';
+      renderExamples(p.examples ?? []);
+      clearResultMessage();
+      // switch calculator implementation based on feature
+      setCurrentCalculator(key);
+    }
+
+    function renderExamples(arr){
+      examplesEl.innerHTML = '';
+      arr.forEach(item=>{
+        const c = document.createElement('div'); c.className='chip'; c.innerText=item;
+        c.addEventListener('click', ()=>{
+          // on click try to auto-split into f/g when pattern found
+          if(item.includes(';')){
+            const parts=item.split(';').map(s=>s.trim());
+            if(parts[0].includes('=')) fEl.value = parts[0].split('=')[1].trim();
+            if(parts[1] && parts[1].includes('=')) gEl.value = parts[1].split('=')[1].trim();
+          } else {
+            if(!fEl.value) fEl.value=item; else if(!gEl.value) gEl.value=item; else { fEl.value=item; gEl.value=''; }
+          }
+        });
+        examplesEl.appendChild(c);
+      });
+    }
+
+    featureEl.addEventListener('change', (e)=> { setPreset(e.target.value); updateFeatureColor(e.target.value); });
+    setPreset('custom');
+
+    function clearResultMessage(){
+      hasilEl.innerHTML = '<div class="small">Belum ada perhitungan. Isi input lalu tekan <strong>Hitung Komposisi</strong>.</div>';
+    }
+
+    document.getElementById('clear').addEventListener('click', ()=>{
+      xEl.value=''; fEl.value=''; gEl.value=''; featureEl.value='custom'; renderExamples([]); clearResultMessage();
+    });
+
+    document.getElementById('swap').addEventListener('click', ()=>{
+      const tmp=fEl.value; fEl.value=gEl.value; gEl.value=tmp; clearResultMessage();
+    });
+
+    document.getElementById('calc').addEventListener('click', ()=>{
+      const rawX = xEl.value;
+      const fExpr = fEl.value.trim();
+      const gExpr = gEl.value.trim();
+
+      if(fExpr === '' || gExpr === ''){
+        hasilEl.innerHTML = '<div class="error">Isi kedua fungsi f(x) dan g(x) terlebih dahulu.</div>';
+        return;
+      }
+
+      if(rawX === ''){
+        hasilEl.innerHTML = '<div class="error">Masukkan nilai x (angka).</div>';
+        return;
+      }
+
+      // parse numeric x
+      const xVal = Number(rawX);
+      if(Number.isNaN(xVal)){
+        hasilEl.innerHTML = '<div class="error">Nilai x tidak valid.</div>';
+        return;
+      }
+
+      try{
+        // Delegate to the current feature calculator
+        const result = currentCalculator(xVal, fExpr, gExpr, featureEl.value);
+        if(result && result.html) hasilEl.innerHTML = result.html; else hasilEl.innerHTML = String(result || '');
+      } catch(err){
+        hasilEl.innerHTML = '<div class="error">Terjadi error saat mengevaluasi fungsi: ' + escapeHtml(err.toString()) + '</div>';
+      }
+    });
+
+    document.getElementById('copy').addEventListener('click', ()=>{
+      navigator.clipboard.readText().catch(()=>{}); // warm-up
+      navigator.clipboard.writeText(hasilEl.innerText || hasilEl.textContent || '').then(()=>{
+        alert('Hasil telah disalin ke clipboard.');
+      }).catch(()=>{ alert('Gagal menyalin — periksa izin browser.'); });
+    });
+
+    document.getElementById('download').addEventListener('click', ()=>{
+      // download current HTML as file
+      const blob = new Blob([document.documentElement.outerHTML], {type: 'text/html'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'komposisi_fungsi_solver.html'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    });
+
+    function formatNumber(v){
+      if(typeof v === 'number'){
+        if(Number.isInteger(v)) return v.toString();
+        return Number.parseFloat(v).toFixed(6).replace(/\.0+$/,'');
+      }
+      return String(v);
+    }
+
+    // Basic escaping for safety in UI
+    function escapeHtml(s){
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+  </script></body>
+</html>
